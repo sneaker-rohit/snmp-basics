@@ -7,18 +7,24 @@ import java.util.List;
 
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
+import org.snmp4j.ScopedPDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
 import org.snmp4j.TransportMapping;
+import org.snmp4j.UserTarget;
 import org.snmp4j.event.ResponseEvent;
 import org.snmp4j.event.ResponseListener;
 import org.snmp4j.mp.MPv1;
 import org.snmp4j.mp.MPv2c;
 import org.snmp4j.mp.MPv3;
 import org.snmp4j.mp.SnmpConstants;
+import org.snmp4j.security.AuthMD5;
+import org.snmp4j.security.PrivDES;
+import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModels;
 import org.snmp4j.security.SecurityProtocols;
 import org.snmp4j.security.USM;
+import org.snmp4j.security.UsmUser;
 import org.snmp4j.smi.Address;
 import org.snmp4j.smi.Integer32;
 import org.snmp4j.smi.OID;
@@ -42,7 +48,7 @@ import edu.tcd.nds.snmp.utils.IoTDeviceTrapReceiver;
  * 
  *
  */
-public class IoTManager {
+public class IoTManagerSNMPv3 {
 
 	private String address;
 	private Snmp snmp;
@@ -54,7 +60,7 @@ public class IoTManager {
 	 * @param address
 	 *            the host and port where this manager object will listen
 	 */
-	public IoTManager(String address) {
+	public IoTManagerSNMPv3(String address) {
 		this.address = address;
 		try {
 			start();
@@ -91,7 +97,7 @@ public class IoTManager {
 		snmp.getMessageDispatcher().addMessageProcessingModel(new MPv2c());
 		snmp.getMessageDispatcher().addMessageProcessingModel(new MPv3());
 		
-		/*
+		
 		USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
 		SecurityModels.getInstance().addSecurityModel(usm);
 
@@ -100,7 +106,7 @@ public class IoTManager {
                             AuthMD5.ID,
                             new OctetString("MD5DESUserAuthPassword"),
                             PrivDES.ID,
-                            new OctetString("MD5DESUserPrivPassword")));*/
+                            new OctetString("MD5DESUserPrivPassword")));
 	
 		transport.listen();
 	}
@@ -131,17 +137,17 @@ public class IoTManager {
 	 *             if anything goes wrong while performing IO operation
 	 */
 	public void setAsString(OID oid, String value) throws IOException {
-		PDU pdu = new PDU();
+		ScopedPDU pdu = new ScopedPDU();
 		VariableBinding inputParam = new VariableBinding(oid);
 		inputParam.setVariable(new OctetString(value));
 		pdu.add(inputParam);
-		pdu.setType(PDU.SET);
+		pdu.setType(ScopedPDU.SET);
 		ResponseEvent event = snmp.send(pdu, getTarget(), null);
 		System.out.println("event.getResponse() "+event.getResponse());
 	}
 	
 	public void setAsInt(OID oid, int value) throws IOException {
-		PDU pdu = new PDU();
+		ScopedPDU pdu = new ScopedPDU();
 		VariableBinding inputParam = new VariableBinding(oid);
 		inputParam.setVariable(new Integer32(value));
 		pdu.add(inputParam);
@@ -171,20 +177,21 @@ public class IoTManager {
 	
 	
 	private PDU getPDU(OID oids[]) {
-		PDU pdu = new PDU();
+		/*PDU pdu = new PDU();
 		for (OID oid : oids) {
 			pdu.add(new VariableBinding(oid));
 		}
 		pdu.setType(PDU.GET);
 		return pdu;
 		
-		// Enable this for Version SNMP version 3
-		/*ScopedPDU pdu = new ScopedPDU();
+		// Enable this for Version SNMP version 3 */
+		
+		ScopedPDU pdu = new ScopedPDU();
 		for (OID oid : oids) {
 			pdu.add(new VariableBinding(oid));
 		}
 		pdu.setType(ScopedPDU.GET);
-		return pdu;*/
+		return pdu;
 	}
 	
 	public ResponseEvent get(OID oids[]) throws IOException {
@@ -197,17 +204,16 @@ public class IoTManager {
 	
 	private Target getTarget() {
 		Address targetAddress = new UdpAddress(address);
-		// UserTarget target = new UserTarget();
+		UserTarget target = new UserTarget();
 		// for version 1 make use of community target
-		CommunityTarget target = new CommunityTarget();
-		target.setCommunity(new OctetString(Constants.COMMUNITY));
+		// CommunityTarget target = new CommunityTarget();
+		//target.setCommunity(new OctetString(Constants.COMMUNITY));
 		target.setAddress(targetAddress);
 		target.setRetries(2);
 		target.setTimeout(1500);
-		target.setVersion(SnmpConstants.version1);
-		// Enable for SNMP version 3
-		// target.setSecurityLevel(SecurityLevel.AUTH_PRIV);
-		// target.setSecurityName(new OctetString("MD5DES"));
+		target.setVersion(SnmpConstants.version3);
+		target.setSecurityLevel(SecurityLevel.AUTH_PRIV);
+		target.setSecurityName(new OctetString("MD5DES"));
 		return target;   
 		
 	}
@@ -253,7 +259,7 @@ public class IoTManager {
 		try {
 			String ipAndPort = args[0];
 			BufferedReader brConsoleReader = new BufferedReader(new InputStreamReader(System.in));
-			IoTManager manager = new IoTManager(ipAndPort);
+			IoTManagerSNMPv3 manager = new IoTManagerSNMPv3(ipAndPort);
 
 			int input = 0;
 			while (input != 4) {
@@ -343,3 +349,4 @@ public class IoTManager {
 		trap.start();*/
 	}
 }
+
