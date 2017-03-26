@@ -275,12 +275,12 @@ public class IoTManagerSNMPv3 {
 					long startTime = System.currentTimeMillis();
 					manager.print();
 					long stopTime = System.currentTimeMillis();
-					System.out.println("Approximate time taken to fetch the response:  "+(stopTime-startTime));
+					System.out.println("Approximate time taken to fetch the response (in milliseconds):  "+(stopTime-startTime));
 				} else if (input == 2) {
 					long startTime = System.currentTimeMillis();
 					manager.setToDefault();
 					long stopTime = System.currentTimeMillis();
-					System.out.println("time "+(stopTime-startTime));
+					System.out.println("Approximate time taken to fetch the response (in milliseconds):  "+(stopTime-startTime));
 				} else if (input == 3) {
 					System.out.print("Exiting ...");
 					System.exit(0);
